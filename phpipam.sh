@@ -55,11 +55,11 @@ PHPIPAM_CONFIG="/var/www/phpipam"
 VHOST_FILE="/etc/apache2/sites-available/phpipam.conf"
 
  
-color_echo green "  ----------------------------------------"
+color_echo green "------------------------------------------"
 color_echo green "   PHPIPAM Automatic install on debian 12 "
-color_echo green "  ----------------------------------------"
-color_echo yellow "   📧 : lamine.traore@netopsgn.ovh        "
-color_echo green "  ----------------------------------------"
+color_echo green "------------------------------------------"
+color_echo green "     📧 : lamine.traore@netopsgn.ovh       "
+color_echo green "------------------------------------------"
 echo ""
 echo ""
 echo ""
@@ -82,7 +82,7 @@ INSTALL_UPDATE=$(sudo apt-get update -y && sudo apt-get upgrade -y >>${LOG_FILE}
 IR_UPDATE=$?
 
 color_echo green " ♻️ Installation d'Apache"
-INSTALL_1=$(sudo apt-get install apt-transport-https apache2 curl gnupg fping -y >>${LOG_FILE} 2>>${ERROR_FILE})
+INSTALL_1=$(sudo apt-get install -y apache2 apt-transport-https  curl gnupg fping  >>${LOG_FILE} 2>>${ERROR_FILE})
 IR1=$?
 
 if [[ "${IR1}" -eq "0" && "${IR_UPDATE}" -eq "0" ]]
@@ -108,7 +108,7 @@ IR2=$?
 
 if [[ "${DL_R1}" -eq "0" && "${WR_APT_R}" -eq "0" && "${IR_UPDATE}" -eq "0" && "${IR2}" -eq "0" ]]
 then
-	color_echo green "✅ Installation de PHP 8 et des modules Termine avec succes"
+	color_echo green " ✅ Installation de PHP 8 et des modules Termine avec succes"
 else
 	color_echo red " ❌ apt install  impossible. Voir les fichiers log and error (${LOG_FILE} and ${ERROR_FILE})"
 	exit 1
@@ -120,7 +120,7 @@ then
     DL_R2=$?
     if [[ "${DL_R2}" -eq "0" ]]
     then
-        color_echo green "✅ Package mysql-apt-config_0.8.34-1_all.deb telecharge"
+        color_echo green " ✅ Package mysql-apt-config_0.8.34-1_all.deb telecharge"
     else
         color_echo red " ❌ Impossible de telecharger mysql-apt-config_0.8.34-1_all.deb. Voir les fichiers log and error (${LOG_FILE} and ${ERROR_FILE})"
         exit 1
@@ -138,7 +138,7 @@ DPKG_I=$(sudo DEBIAN_FRONTEND=noninteractive dpkg --force-depends -i mysql-apt-c
 R_DPKG=$?
 if [[ "${DL_R2}" -eq "0" ]]
 then
-    color_echo green "✅ Package mysql-apt-config_0.8.34-1_all.deb installe"
+    color_echo green " ✅ Package mysql-apt-config_0.8.34-1_all.deb installe"
 else
     color_echo red " ❌ Impossible de d'installe mysql-apt-config_0.8.34-1_all.deb. Voir les fichiers log and error (${LOG_FILE} and ${ERROR_FILE})"
     exit 1
@@ -158,7 +158,7 @@ INSTALL_MYSQL=$(sudo DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-ser
 IR3=$?
 if [[ "${DL_R2}" -eq "0" ]]
 then
-    color_echo green "✅ Mysql-server installe"
+    color_echo green " ✅ Mysql-server installe"
 else
     color_echo red " ❌ Impossible de d'installe Mysql-server . Voir les fichiers log and error (${LOG_FILE} and ${ERROR_FILE})"
     exit 1
@@ -171,20 +171,20 @@ for MODULE in "${PHP_MODULE_LIST[@]}"; do
     fi
 done
 if [ ${#MISSING_MODULES[@]} -eq 0 ]; then
-    color_echo green "✅ Tous les modules PHP requis sont installés."
+    color_echo green " ✅ Tous les modules PHP requis sont installés."
 else
-    color_echo red "❌ Modules PHP manquants :"
+    color_echo red " ❌ Modules PHP manquants :"
     for MOD in "${MISSING_MODULES[@]}"; do
         color_echo magenta " - $MOD"
     done
     exit 1
 fi
 
-color_echo blue "⚙️ Preparation de Database pour phpIPAM"
-color_echo blue "⚙️ Creation de la database $PHPIPAM_DB"
+color_echo blue " ⚙️ Preparation de Database pour phpIPAM"
+color_echo blue " ⚙️ Creation de la database $PHPIPAM_DB"
 DB_CMD1=$(sudo mysql -e "CREATE DATABASE IF NOT EXISTS $PHPIPAM_DB;" >>${LOG_FILE} 2>>${ERROR_FILE})
 DB_R1=$?
-color_echo blue "⚙️ Creation et configuration du user $PHPIPAM_USER"
+color_echo blue " ⚙️ Creation et configuration du user $PHPIPAM_USER"
 DB_CMD2=$(sudo mysql -e "CREATE USER $PHPIPAM_USER@'%' IDENTIFIED BY '$PHPIPAM_PASSWORD';" >>${LOG_FILE} 2>>${ERROR_FILE})
 DB_R2=$?
 DB_CMD3=$(sudo mysql -e "GRANT ALL PRIVILEGES ON $PHPIPAM_DB.* TO $PHPIPAM_USER@'%';" >>${LOG_FILE} 2>>${ERROR_FILE})
@@ -204,13 +204,13 @@ fi
 # sudo mysql -e "USE mysql; ALTER USER 'root'@'localhost' IDENTIFIED BY '$MYSQL_ROOT_PASSWORD'; GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' WITH GRANT OPTION; FLUSH PRIVILEGES;"
 # sudo mysql -e "USE mysql; ALTER USER 'root'@'localhost' IDENTIFIED BY 'Admin#1234'; GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' WITH GRANT OPTION; FLUSH PRIVILEGES;"
 
-color_echo green "♻️ Telechargement du package phpIPAM"
+color_echo green " ♻️ Telechargement du package phpIPAM"
 curl -L -o phpipam-v1.7.3.tgz https://github.com/phpipam/phpipam/releases/download/v1.7.3/phpipam-v1.7.3.tgz
 
-color_echo green "♻️ Decompression du package"
+color_echo green " ♻️ Decompression du package"
 sudo tar -xf phpipam-v1.7.3.tgz -C /var/www/
 
-color_echo blue "⚙️ Configuration des parametres"
+color_echo blue " ⚙️ Configuration des parametres"
 if [ -e "$PHPIPAM_CONFIG/config.dist.php" ]
 then
     COPY_CMD=$(sudo cp "$PHPIPAM_CONFIG/config.dist.php" "$PHPIPAM_CONFIG/config.php" >>${LOG_FILE} 2>>${ERROR_FILE})
@@ -231,7 +231,7 @@ else
 	color_echo red " ❌ Fichier '${PHPIPAM_CONFIG}/config.dist.php' non trouvé !"
 	exit 1
 fi
-color_echo blue "⚙️ Creation du Virtual Host - APACHE"
+color_echo blue " ⚙️ Creation du Virtual Host - APACHE"
 
 sudo tee "$VHOST_FILE" > /dev/null <<EOF
 <VirtualHost *:80>
@@ -260,12 +260,12 @@ sudo a2dissite 000-default.conf >>${LOG_FILE} 2>>${ERROR_FILE}
 color_echo magenta " ⚙️ Redemarrage APACHE"
 sudo systemctl reload apache2 >>${LOG_FILE} 2>>${ERROR_FILE}
 
-color_echo green "MySQL root password"
-echo $MYSQL_ROOT_PASSWORD
-color_echo green "MySQL User phpipam password"
-echo $PHPIPAM_PASSWORD
-color_echo green "⚠️ Sauvegarder précieusement ce mot de passe"
+color_echo green " MySQL root password"
+echo " $MYSQL_ROOT_PASSWORD"
+color_echo green " MySQL User phpipam password"
+echo " $PHPIPAM_PASSWORD"
+color_echo green " ⚠️ Sauvegarder précieusement ce mot de passe"
 color_echo green " Executer la commande suivante après l'installation depuis la WebGui "
-color_echo green 'sudo sed -i "s/^\(\$disable_installer = \)false;/\1true;/" "/var/www/phpipam/config.php'
+color_echo green ' sudo sed -i "s/^\(\$disable_installer = \)false;/\1true;/" "/var/www/phpipam/config.php"'
 
 # sudo sed -i "s/^\(\$disable_installer = \)false;/\1true;/" "/var/www/phpipam/config.php"
