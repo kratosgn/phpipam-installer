@@ -60,6 +60,9 @@ color_echo green "   PHPIPAM Automatic install on debian 12 "
 color_echo green "  ----------------------------------------"
 color_echo yellow "   📧 : lamine.traore@netopsgn.ovh        "
 color_echo green "  ----------------------------------------"
+echo ""
+echo ""
+echo ""
 
 # Must be run as root ! 
 if [ "$EUID" -ne 0 ]
@@ -161,20 +164,12 @@ else
     exit 1
 fi
 
-# color_echo blue "⚙️ Preparation de mysql"
-
-# sudo mysql -e "USE mysql; UPDATE user SET plugin='caching_sha2_password' WHERE User='root'; FLUSH PRIVILEGES;"
-
-# color_echo blue "⚙️ Preparation de mysql terminer"
-
 color_echo blue "🔍 Vérification des modules PHP..."
-
 for MODULE in "${PHP_MODULE_LIST[@]}"; do
     if ! php -m | grep -qi "^$MODULE$"; then
         MISSING_MODULES+=("$MODULE")
     fi
 done
-
 if [ ${#MISSING_MODULES[@]} -eq 0 ]; then
     color_echo green "✅ Tous les modules PHP requis sont installés."
 else
@@ -185,15 +180,26 @@ else
     exit 1
 fi
 
-color_echo green "⚙️ Preparation de Database pour phpIPAM"
-
+color_echo blue "⚙️ Preparation de Database pour phpIPAM"
 color_echo blue "⚙️ Creation de la database $PHPIPAM_DB"
-sudo mysql -e "CREATE DATABASE IF NOT EXISTS $PHPIPAM_DB;"
+DB_CMD1=$(sudo mysql -e "CREATE DATABASE IF NOT EXISTS $PHPIPAM_DB;" >>${LOG_FILE} 2>>${ERROR_FILE})
+DB_R1=$?
 color_echo blue "⚙️ Creation et configuration du user $PHPIPAM_USER"
-sudo mysql -e "CREATE USER $PHPIPAM_USER@'%' IDENTIFIED BY '$PHPIPAM_PASSWORD';"
-sudo mysql -e "GRANT ALL PRIVILEGES ON $PHPIPAM_DB.* TO $PHPIPAM_USER@'%';"
-sudo mysql -e "FLUSH PRIVILEGES;"
-color_echo green "✅ Database et user cree ..."
+DB_CMD2=$(sudo mysql -e "CREATE USER $PHPIPAM_USER@'%' IDENTIFIED BY '$PHPIPAM_PASSWORD';" >>${LOG_FILE} 2>>${ERROR_FILE})
+DB_R2=$?
+DB_CMD3=$(sudo mysql -e "GRANT ALL PRIVILEGES ON $PHPIPAM_DB.* TO $PHPIPAM_USER@'%';" >>${LOG_FILE} 2>>${ERROR_FILE})
+DB_R3=$?
+DB_CMD4=$(sudo mysql -e "FLUSH PRIVILEGES;" >>${LOG_FILE} 2>>${ERROR_FILE})
+DB_R4=$?
+
+if [[ "${DB_R1}" -eq "0" && "${DB_R2}" -eq "0" && "${DB_R3}" -eq "0" && "${DB_R4}" -eq "0" ]]
+then
+    color_echo green " ✅ Preparation Database terminer"
+else
+    color_echo red " ❌ Erreur lors de la creation de la Database. Voir les fichiers log and error (${LOG_FILE} and ${ERROR_FILE})"
+    exit 1
+fi
+
 
 # sudo mysql -e "USE mysql; ALTER USER 'root'@'localhost' IDENTIFIED BY '$MYSQL_ROOT_PASSWORD'; GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' WITH GRANT OPTION; FLUSH PRIVILEGES;"
 # sudo mysql -e "USE mysql; ALTER USER 'root'@'localhost' IDENTIFIED BY 'Admin#1234'; GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' WITH GRANT OPTION; FLUSH PRIVILEGES;"
@@ -205,14 +211,28 @@ color_echo green "♻️ Decompression du package"
 sudo tar -xf phpipam-v1.7.3.tgz -C /var/www/
 
 color_echo blue "⚙️ Configuration des parametres"
-sudo cp "$PHPIPAM_CONFIG/config.dist.php" "$PHPIPAM_CONFIG/config.php"
-# sudo sed -i "s/^\(\$db\['host'\] = \)'127.0.0.1';/\1'localhost';/" "$PHPIPAM_CONFIG/config.php"
-sudo sed -i "s/^\(\$db\['host'\] = \)'127.0.0.1';/\1'localhost';/" "$PHPIPAM_CONFIG/config.php"
-sudo sed -i "s/^\(\$db\['user'\] = \)'phpipam';/\1'$PHPIPAM_USER';/" "$PHPIPAM_CONFIG/config.php"
-sudo sed -i "s/^\(\$db\['pass'\] = \)'phpipamadmin';/\1'$PHPIPAM_PASSWORD';/" "$PHPIPAM_CONFIG/config.php"
-sudo sed -i "s/^\(\$db\['name'\] = \)'phpipam';/\1'$PHPIPAM_DB';/" "$PHPIPAM_CONFIG/config.php"
-
+if [ -e "$PHPIPAM_CONFIG/config.dist.php" ]
+then
+    COPY_CMD=$(sudo cp "$PHPIPAM_CONFIG/config.dist.php" "$PHPIPAM_CONFIG/config.php" >>${LOG_FILE} 2>>${ERROR_FILE})
+    RCPY=$?
+    if [[ "$RCPY" -ne "0" ]]
+	then
+		color_echo red " ❌ Impossible de copier le fichier (${PHPIPAM_CONFIG}/config.dist.php)."
+		exit 1
+	else
+        # sudo sed -i "s/^\(\$db\['host'\] = \)'127.0.0.1';/\1'localhost';/" "$PHPIPAM_CONFIG/config.php"
+        sudo sed -i "s/^\(\$db\['host'\]\s*=\s*\).*\$/\1'localhost';/" "$PHPIPAM_CONFIG/config.php"
+        sudo sed -i "s/^\(\$db\['user'\]\s*=\s*\).*\$/\1'$PHPIPAM_USER';/" "$PHPIPAM_CONFIG/config.php"
+        sudo sed -i "s/^\(\$db\['pass'\]\s*=\s*\).*\$/\1'$PHPIPAM_PASSWORD';/" "$PHPIPAM_CONFIG/config.php"
+        sudo sed -i "s/^\(\$db\['name'\]\s*=\s*\).*\$/\1'$PHPIPAM_DB';/" "$PHPIPAM_CONFIG/config.php"
+        color_echo green " ✅ Phpipam fichier de config par defaut modifier avec les parametres defini pour Mysql "
+    fi
+else
+	color_echo red " ❌ Fichier '${PHPIPAM_CONFIG}/config.dist.php' non trouvé !"
+	exit 1
+fi
 color_echo blue "⚙️ Creation du Virtual Host - APACHE"
+
 sudo tee "$VHOST_FILE" > /dev/null <<EOF
 <VirtualHost *:80>
     ServerName phpipam.local
@@ -229,17 +249,23 @@ sudo tee "$VHOST_FILE" > /dev/null <<EOF
 </VirtualHost>
 EOF
 
-echo "✅ VirtualHost écrit dans $VHOST_FILE"
+color_echo green " ✅ VirtualHost écrit dans $VHOST_FILE"
 
-sudo a2enmod rewrite
-sudo a2ensite phpipam.conf
-sudo a2dissite 000-default.conf
-sudo systemctl reload apache2
+
+color_echo blue " ⚙️ Configuration APACHE"
+sudo a2enmod rewrite >>${LOG_FILE} 2>>${ERROR_FILE}
+sudo a2ensite phpipam.conf >>${LOG_FILE} 2>>${ERROR_FILE}
+sudo a2dissite 000-default.conf >>${LOG_FILE} 2>>${ERROR_FILE}
+
+color_echo magenta " ⚙️ Redemarrage APACHE"
+sudo systemctl reload apache2 >>${LOG_FILE} 2>>${ERROR_FILE}
 
 color_echo green "MySQL root password"
 echo $MYSQL_ROOT_PASSWORD
 color_echo green "MySQL User phpipam password"
 echo $PHPIPAM_PASSWORD
 color_echo green "⚠️ Sauvegarder précieusement ce mot de passe"
+color_echo green " Executer la commande suivante après l'installation depuis la WebGui "
+color_echo green 'sudo sed -i "s/^\(\$disable_installer = \)false;/\1true;/" "/var/www/phpipam/config.php'
 
 # sudo sed -i "s/^\(\$disable_installer = \)false;/\1true;/" "/var/www/phpipam/config.php"
