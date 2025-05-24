@@ -82,12 +82,12 @@ INSTALL_UPDATE=$(sudo apt-get update -y && sudo apt-get upgrade -y >>${LOG_FILE}
 IR_UPDATE=$?
 
 color_echo green " ♻️ Installation d'Apache"
-INSTALL_1=$(sudo apt-get install apt-get-transport-https apache2 curl gnupg fping -y >>${LOG_FILE} 2>>${ERROR_FILE})
+INSTALL_1=$(sudo apt-get install apt-transport-https apache2 curl gnupg fping -y >>${LOG_FILE} 2>>${ERROR_FILE})
 IR1=$?
 
 if [[ "${IR1}" -eq "0" && "${IR_UPDATE}" -eq "0" ]]
 then
-	color_echo green " ✅ apt-get-transport-https apache2 curl gnupg fping installes avec succes"
+	color_echo green " ✅ apt-transport-https apache2 curl gnupg fping installes avec succes"
 else
 	color_echo red " ❌ apt-get install  impossible. Voir les fichiers log and error (${LOG_FILE} and ${ERROR_FILE})"
 	exit 1
