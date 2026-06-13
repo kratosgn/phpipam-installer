@@ -205,10 +205,10 @@ fi
 # sudo mysql -e "USE mysql; ALTER USER 'root'@'localhost' IDENTIFIED BY 'Admin#1234'; GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' WITH GRANT OPTION; FLUSH PRIVILEGES;"
 
 color_echo green " ♻️ Telechargement du package phpIPAM"
-curl -L -o phpipam-v1.7.3.tgz https://github.com/phpipam/phpipam/releases/download/v1.7.3/phpipam-v1.7.3.tgz
+curl -L -o phpipam-v1.8.1.tgz https://github.com/phpipam/phpipam/releases/download/v1.8.1/phpipam-v1.8.1.tgz
 
 color_echo green " ♻️ Decompression du package"
-sudo tar -xf phpipam-v1.7.3.tgz -C /var/www/
+sudo tar -xf phpipam-v1.8.1.tgz -C /var/www/
 
 color_echo blue " ⚙️ Configuration des parametres"
 if [ -e "$PHPIPAM_CONFIG/config.dist.php" ]
